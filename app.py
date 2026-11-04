@@ -19,15 +19,24 @@ from ui.components import is_demo_dataset, load_dataset, resolve_database_url
 
 st.set_page_config(page_title="Broker Immo — Demo", layout="wide")
 
+# Traces de démarrage : sur un hébergement distant (Streamlit Cloud), les
+# logs sont le seul moyen de distinguer un script qui ne s'exécute jamais
+# — session websocket qui n'aboutit pas, l'interface reste alors sur son
+# spinner — d'un script qui s'exécute mais bloque ou échoue.
+print("[broker-immo] début du script", flush=True)
+
 # La base lue est résolue ici pour afficher un diagnostic lisible plutôt
 # qu'une traceback sur une page vide si elle est injoignable (déploiement
 # sans secret `DATABASE_URL`, serveur Postgres éteint).
 try:
     _database_url, _fallback_notice = resolve_database_url()
+    print(f"[broker-immo] base : {_database_url.split('://')[0]}", flush=True)
     if _fallback_notice:
         st.warning(_fallback_notice)
     _properties, _scores, _ranked = load_dataset()
+    print(f"[broker-immo] {len(_properties)} actifs chargés", flush=True)
 except SQLAlchemyError as exc:
+    print(f"[broker-immo] échec base : {type(exc).__name__}", flush=True)
     st.error(
         "Impossible de lire la base de données.\n\n"
         f"`{type(exc).__name__}` — vérifier la variable d'environnement "
@@ -55,4 +64,5 @@ pages = {
 st.session_state["pages"] = pages
 
 navigation = st.navigation(list(pages.values()))
+print(f"[broker-immo] rendu de la page « {navigation.title} »", flush=True)
 navigation.run()
