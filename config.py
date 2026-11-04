@@ -26,6 +26,20 @@ CONFIG_VERSION = "1.0.0"
 # ---------------------------------------------------------------------------
 DATA_SOURCE = os.getenv("DATA_SOURCE", "demo")  # "demo" ou "pappers"
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg://localhost/broker_immo")
+
+# Base SQLite de démonstration versionnée dans le dépôt, produite par
+# l'ingestion batch (`DATABASE_URL=sqlite:///... python -m src.ingest`,
+# voir scripts/build_demo_db.sh). Elle sert uniquement de repli en
+# LECTURE pour l'interface quand aucune base n'est joignable — typiquement
+# un déploiement Streamlit Community Cloud sans secret `DATABASE_URL`.
+# Ce n'est pas une ingestion déclenchée depuis Streamlit (CLAUDE.md,
+# section 3.8) : le fichier est pré-construit, l'interface ne fait que le lire.
+DEMO_DATABASE_PATH = BASE_DIR / "data" / "demo" / "broker_immo_demo.sqlite"
+DEMO_DATABASE_URL = f"sqlite:///{DEMO_DATABASE_PATH}"
+
+# Vrai si l'environnement fournit explicitement une base (sinon DATABASE_URL
+# n'est que son défaut Postgres local, inutilisable sur un serveur distant).
+DATABASE_URL_IS_EXPLICIT = bool(os.getenv("DATABASE_URL"))
 PAPPERS_IMMO_API_KEY = os.getenv("PAPPERS_IMMO_API_KEY", "")
 PAPPERS_IMMO_BASE_URL = "https://api-immobilier.pappers.fr/v1/"
 

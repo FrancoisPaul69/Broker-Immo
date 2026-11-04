@@ -11,3 +11,9 @@ venv/
 .streamlit/secrets.toml
 ~$*
 *:Zone.Identifier
+.neon
+
+# La base SQLite de démonstration est volontairement versionnée : elle est
+# pré-construite par scripts/build_demo_db.sh et sert de jeu de lecture au
+# déploiement Streamlit Cloud.
+!data/demo/broker_immo_demo.sqlite

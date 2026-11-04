@@ -90,6 +90,37 @@ mode réel : l'ingestion par zone (`--code-postal`) nécessite `GET
 /parcelles`, dont le schéma de réponse n'est pas documenté par Pappers —
 voir le TODO dans `src/pappers_immo_client.py` et `PROGRESS.md`.
 
+### Déploiement Streamlit Community Cloud
+
+L'interface ne fait que lire une base, donc un déploiement a besoin d'une
+base joignable. Deux cas, dans cet ordre de priorité :
+
+1. **Secret `DATABASE_URL`** renseigné dans l'app (*Settings → Secrets*),
+   au format `DATABASE_URL = "postgresql+psycopg://..."`. C'est le mode
+   normal : la base distante doit avoir été migrée (`alembic upgrade
+   head`) et peuplée (`python -m src.ingest`) depuis un poste de dev.
+2. **Repli automatique sur la base DEMO embarquée** —
+   `data/demo/broker_immo_demo.sqlite`, versionnée dans le dépôt. Elle
+   est utilisée si aucun secret n'est fourni, ou si la base configurée
+   est injoignable ; l'interface affiche alors un avertissement explicite.
+   L'app démarre donc toujours, même sans secret.
+
+Reconstruire la base DEMO après un changement de jeu de données, de
+scoring ou de schéma :
+
+```bash
+./scripts/build_demo_db.sh
+```
+
+Deux réglages restent à faire dans le dashboard Streamlit Cloud, aucun
+fichier du dépôt ne les pilote :
+
+- **Partage** : *Settings → Sharing* doit être sur « Anyone with the link
+  can view ». Une app privée renvoie les visiteurs vers l'authentification
+  Streamlit, ce qui se manifeste par une page blanche avec un spinner.
+- **Version de Python** : choisie dans la boîte de dialogue de
+  déploiement (ni `runtime.txt` ni `.python-version` ne sont lus).
+
 ## Points ouverts
 
 - Le schéma `Proprietaire` de l'API Pappers Immobilier n'expose pas de
