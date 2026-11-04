@@ -18,7 +18,21 @@ import config
 
 
 def get_engine(database_url: str | None = None) -> Engine:
-    return create_engine(database_url or config.DATABASE_URL)
+    """Engine SQLAlchemy pour l'URL fournie (ou `config.DATABASE_URL`).
+
+    Sur Postgres, impose un `connect_timeout` : sans lui, une connexion
+    vers un hôte injoignable bloque indéfiniment, ce qui fige le script
+    Streamlit sur son spinner sans la moindre trace dans les logs.
+    `pool_pre_ping` évite de réutiliser une connexion coupée entre deux
+    requêtes (cas courant avec un Postgres managé qui se met en veille)."""
+    url = database_url or config.DATABASE_URL
+    if not url.startswith("postgresql") or "connect_timeout" in url:
+        return create_engine(url)
+    return create_engine(
+        url,
+        connect_args={"connect_timeout": config.DATABASE_CONNECT_TIMEOUT_SECONDS},
+        pool_pre_ping=True,
+    )
 
 
 def get_session_factory(engine: Engine) -> sessionmaker[Session]:

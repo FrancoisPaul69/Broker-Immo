@@ -40,6 +40,13 @@ DEMO_DATABASE_URL = f"sqlite:///{DEMO_DATABASE_PATH}"
 # Vrai si l'environnement fournit explicitement une base (sinon DATABASE_URL
 # n'est que son défaut Postgres local, inutilisable sur un serveur distant).
 DATABASE_URL_IS_EXPLICIT = bool(os.getenv("DATABASE_URL"))
+
+# Délai d'établissement d'une connexion Postgres. Sans valeur explicite,
+# libpq attend indéfiniment un hôte qui ne répond pas : le script Streamlit
+# ne se termine alors jamais et l'interface reste bloquée sur son spinner,
+# sans rien écrire dans les logs. Borné ici pour que l'échec soit visible
+# et que le repli sur la base DEMO puisse se déclencher.
+DATABASE_CONNECT_TIMEOUT_SECONDS = int(os.getenv("DATABASE_CONNECT_TIMEOUT_SECONDS", "8"))
 PAPPERS_IMMO_API_KEY = os.getenv("PAPPERS_IMMO_API_KEY", "")
 PAPPERS_IMMO_BASE_URL = "https://api-immobilier.pappers.fr/v1/"
 
