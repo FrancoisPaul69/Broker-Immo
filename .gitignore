@@ -17,3 +17,8 @@ venv/
 # pré-construite par scripts/build_demo_db.sh et sert de jeu de lecture au
 # déploiement Streamlit Cloud.
 !data/demo/broker_immo_demo.sqlite
+
+# Frontend React
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo

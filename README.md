@@ -137,3 +137,18 @@ fichier du dépôt ne les pilote :
 - Le coût de base en jetons d'une requête `/parcelles` n'est pas documenté :
   le compteur de crédits sous-estime la consommation réelle en mode
   `pappers` (voir `config.py`, au-dessus de `CHAMPS_SUPPLEMENTAIRES_COUTS`).
+
+## Nouveau frontend React (migration progressive)
+
+Le design Broker Immo est disponible dans `frontend/`. Il consomme l'API FastAPI de lecture `src/web_api.py`, qui passe exclusivement par `src.repository`. Streamlit reste disponible pendant la migration.
+
+```bash
+# Terminal 1
+.venv/bin/uvicorn src.web_api:app --reload --port 8000
+# Terminal 2
+cd frontend && pnpm install && pnpm dev
+```
+
+Le frontend est alors disponible sur `http://localhost:5173`. Pour un déploiement séparé, renseigner `VITE_API_BASE_URL` d'après `frontend/.env.example` et autoriser son origine avec `FRONTEND_ORIGINS`.
+
+Endpoints : `GET /api/health` et `GET /api/dataset`.
