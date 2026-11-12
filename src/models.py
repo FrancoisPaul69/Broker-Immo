@@ -245,5 +245,8 @@ class ScoreModel(TimestampMixin, Base):
     score_explanation: Mapped[str | None] = mapped_column(Text)
     config_version: Mapped[str] = mapped_column(String)
     calculated_at: Mapped[datetime.datetime] = mapped_column(DateTime)
+    demo_logistic_probability: Mapped[float | None] = mapped_column(Float)
+    demo_logistic_training_label: Mapped[bool | None] = mapped_column(Boolean)
+    demo_logistic_cv_folds: Mapped[int | None] = mapped_column(Integer)
 
     property: Mapped["PropertyModel"] = relationship(back_populates="scores")

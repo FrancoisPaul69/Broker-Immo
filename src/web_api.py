@@ -43,7 +43,11 @@ def _primary_owner(property_: Property):
         return None
     return max(property_.owners, key=lambda ownership: ownership.confidence_score).owner
 
-def _asset_row(rank: int, property_: Property, score: Score) -> dict[str, Any]:
+def _asset_row(
+    rank: int,
+    property_: Property,
+    score: Score,
+) -> dict[str, Any]:
     owner = _primary_owner(property_)
     return {
         "id": property_.numero_parcelle, "rank": rank,
@@ -62,6 +66,8 @@ def _asset_row(rank: int, property_: Property, score: Score) -> dict[str, Any]:
         "asset_score": score.asset_score, "owner_score": score.owner_score,
         "sell_signal_score": score.sell_signal_score,
         "sourcing_score": score.sourcing_score,
+        "demo_logistic_probability": score.demo_logistic_probability,
+        "demo_logistic_training_label": score.demo_logistic_training_label,
         "score_breakdown": [item.model_dump() for item in score.breakdown],
         "score_explanation": score.explanation,
         "owner": owner.nom_entreprise if owner and owner.nom_entreprise else "Propriétaire inconnu",
@@ -72,7 +78,24 @@ def build_dataset_payload(properties: list[Property], scores: dict[str, Score]) 
     """Construit le contrat JSON du frontend depuis les objets du domaine."""
     ranked = [p for p in properties if p.type_actif.value in {"commercial", "incertain"} and p.numero_parcelle in scores]
     ranked.sort(key=lambda p: scores[p.numero_parcelle].sourcing_score, reverse=True)
-    assets = [_asset_row(rank, p, scores[p.numero_parcelle]) for rank, p in enumerate(ranked, 1)]
+    demo = bool(properties) and all(property_.source == "demo" for property_ in properties)
+    demo_model_scores = [score for score in scores.values() if score.demo_logistic_probability is not None]
+    demo_model_available = demo and bool(demo_model_scores)
+    assets = [
+        _asset_row(rank, property_, scores[property_.numero_parcelle])
+        for rank, property_ in enumerate(ranked[:100], 1)
+    ]
+    demo_logistic_assets = []
+    if demo_model_available:
+        logistic_ranked = sorted(
+            (property_ for property_ in ranked if scores[property_.numero_parcelle].demo_logistic_probability is not None),
+            key=lambda property_: scores[property_.numero_parcelle].demo_logistic_probability or 0,
+            reverse=True,
+        )
+        demo_logistic_assets = [
+            _asset_row(rank, property_, scores[property_.numero_parcelle])
+            for rank, property_ in enumerate(logistic_ranked[:100], 1)
+        ]
     portfolios = build_owner_portfolios(properties)
     owners = [{
         "id": siren, "siren": siren,
@@ -93,14 +116,23 @@ def build_dataset_payload(properties: list[Property], scores: dict[str, Score]) 
     top100 = assets[:100]
     average = round(sum(a["sourcing_score"] for a in top100) / len(top100), 1) if top100 else None
     return {
-        "demo": bool(properties) and all(p.source == "demo" for p in properties),
+        "demo": demo,
+        "demo_logistic_model": (
+            {
+                "target": "opportunite_qualifiee",
+                "training_labels": "synthetiques",
+                "cross_validation_folds": demo_model_scores[0].demo_logistic_cv_folds,
+            }
+            if demo_model_available
+            else None
+        ),
         "summary": {
-            "total_assets": len(properties), "qualified_assets": len(assets),
+            "total_assets": len(properties), "qualified_assets": len(ranked),
             "priced_assets": sum(p.prix_derniere_mutation is not None for p in properties),
             "top100_average_score": average, "asset_type_counts": type_counts,
             "confidence_counts": confidence_counts,
         },
-        "assets": top100, "owners": owners,
+        "assets": top100, "demo_logistic_assets": demo_logistic_assets, "owners": owners,
     }
 
 def create_app() -> FastAPI:

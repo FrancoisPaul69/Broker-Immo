@@ -37,6 +37,14 @@ données sont lues depuis la base une seule fois par session
 Streamlit. Le bandeau "DEMO DATA — NOT REAL" ne s'affiche que si tous les
 actifs en base viennent du jeu DEMO.
 
+En mode DEMO, le TOP 100 propose aussi un classement expérimental par
+régression logistique. Sa cible « opportunité qualifiée » est simulée à
+partir des caractéristiques fictives du jeu DEMO, puis le modèle produit
+des probabilités hors-échantillon par validation croisée. Ces étiquettes
+et probabilités sont uniquement illustratives : elles ne représentent pas
+des résultats de prospection réels et ne sont pas proposées sur les
+données Pappers.
+
 ## Mise en route
 
 Environnement de développement : WSL Ubuntu, Python 3.14 (seule version

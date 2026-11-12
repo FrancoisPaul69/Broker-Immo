@@ -5,6 +5,7 @@ import type { Asset, DashboardSummary, Owner } from '@/types/broker'
 
 interface BrokerData {
   assets: Asset[]
+  demoLogisticAssets: Asset[]
   owners: Owner[]
   summary: DashboardSummary
   demo: boolean
@@ -390,12 +391,14 @@ function AssetsPage({
   query: string
   setQuery: (value: string) => void
 }) {
-  const { assets } = useBrokerData()
+  const { assets, demoLogisticAssets, demo } = useBrokerData()
   const [type, setType] = useState('tous')
   const [confidence, setConfidence] = useState('toutes')
+  const [rankingMethod, setRankingMethod] = useState<'sourcing' | 'logistic'>('sourcing')
+  const rankingAssets = demo && rankingMethod === 'logistic' ? demoLogisticAssets : assets
   const filtered = useMemo(
     () =>
-      assets.filter((asset) => {
+      rankingAssets.filter((asset) => {
         const haystack =
           `${asset.adresse_brute} ${asset.ville} ${asset.owner} ${asset.numero_parcelle}`.toLowerCase()
         return (
@@ -404,7 +407,7 @@ function AssetsPage({
           (confidence === 'toutes' || asset.type_actif_confidence === confidence)
         )
       }),
-    [query, type, confidence],
+    [rankingAssets, query, type, confidence],
   )
   return (
     <>
@@ -430,6 +433,7 @@ function AssetsPage({
                   score_proprietaire: asset.owner_score,
                   score_signaux: asset.sell_signal_score,
                   score_sourcing: asset.sourcing_score,
+                  probabilite_logistique_demo: asset.demo_logistic_probability,
                 })),
               )
             }
@@ -464,18 +468,37 @@ function AssetsPage({
             <option value="faible">Faible</option>
           </select>
         </label>
+        <label>
+          <span>Classement</span>
+          <select
+            value={rankingMethod}
+            onChange={(e) => setRankingMethod(e.target.value === 'logistic' ? 'logistic' : 'sourcing')}
+            disabled={!demo}
+          >
+            <option value="sourcing">Score sourcing</option>
+            {demo && <option value="logistic">Régression logistique DEMO</option>}
+          </select>
+        </label>
         <button className="filter-icon" aria-label="Filtres">
           <Icon name="filter" />
         </button>
       </section>
+      {demo && rankingMethod === 'logistic' && (
+        <p className="demo-model-note">
+          Modèle illustratif : résultats d’entraînement synthétiques, aucune performance métier
+          validée. Tri par probabilité estimée sur le jeu DEMO.
+        </p>
+      )}
       <section className="panel table-panel">
         <div className="table-caption">
           <p>
             <strong>{filtered.length}</strong> actif
             {filtered.length > 1 ? 's' : ''} affiché
-            {filtered.length > 1 ? 's' : ''} <span>· extrait du TOP 100 réel</span>
+            {filtered.length > 1 ? 's' : ''} <span>· extrait du TOP 100</span>
           </p>
-          <small>Trié par score décroissant</small>
+          <small>
+            Trié par {rankingMethod === 'logistic' ? 'probabilité DEMO' : 'score sourcing'}
+          </small>
         </div>
         <div className="table-scroll">
           <table>
@@ -488,13 +511,13 @@ function AssetsPage({
                 <th>Actif</th>
                 <th>Proprio.</th>
                 <th>Signaux</th>
-                <th>Score</th>
+                <th>{rankingMethod === 'logistic' ? 'Prob. DEMO' : 'Score'}</th>
                 <th />
               </tr>
             </thead>
             <tbody>
               {filtered.map((asset) => {
-                const rank = assets.findIndex((item) => item.id === asset.id) + 1
+                const rank = asset.rank
                 return (
                   <tr key={asset.id} onClick={() => openDetail(asset)}>
                     <td>
@@ -520,7 +543,13 @@ function AssetsPage({
                     <td>{asset.owner_score.toFixed(1)}</td>
                     <td>{asset.sell_signal_score.toFixed(1)}</td>
                     <td>
-                      <Score value={asset.sourcing_score} />
+                      {rankingMethod === 'logistic' ? (
+                        asset.demo_logistic_probability === null
+                          ? '—'
+                          : `${(asset.demo_logistic_probability * 100).toFixed(1)} %`
+                      ) : (
+                        <Score value={asset.sourcing_score} />
+                      )}
                     </td>
                     <td>
                       <Icon name="chevron" size={15} />
@@ -538,7 +567,6 @@ function AssetsPage({
 }
 
 function DetailPage({ asset }: { asset: Asset }) {
-  const { assets } = useBrokerData()
   const groups = [
     ['Score actif', asset.asset_score, 40, asset.score_breakdown.slice(0, 4)],
     ['Score propriétaire', asset.owner_score, 30, asset.score_breakdown.slice(4, 6)],
@@ -547,7 +575,7 @@ function DetailPage({ asset }: { asset: Asset }) {
   return (
     <>
       <PageTitle
-        eyebrow={`ACTIF #${assets.findIndex((a) => a.id === asset.id) + 1} DU CLASSEMENT`}
+        eyebrow={`ACTIF #${asset.rank} DU CLASSEMENT`}
         title={asset.adresse_brute.split(/\d{5}/)[0].trim()}
         subtitle={`${asset.code_postal} ${asset.ville} · Parcelle ${asset.numero_parcelle}`}
         action={
@@ -556,7 +584,7 @@ function DetailPage({ asset }: { asset: Asset }) {
             onClick={() =>
               downloadCsv('broker-immo-fiche-actif.csv', [
                 {
-                  rang: assets.findIndex((a) => a.id === asset.id) + 1,
+                  rang: asset.rank,
                   parcelle: asset.numero_parcelle,
                   adresse: asset.adresse_brute,
                   ville: asset.ville,
@@ -566,6 +594,7 @@ function DetailPage({ asset }: { asset: Asset }) {
                   proprietaire: asset.owner,
                   siren: asset.siren,
                   score_sourcing: asset.sourcing_score,
+                  probabilite_logistique_demo: asset.demo_logistic_probability,
                 },
               ])
             }
@@ -623,6 +652,17 @@ function DetailPage({ asset }: { asset: Asset }) {
               </strong>
             </p>
           </div>
+          {asset.demo_logistic_probability !== null && (
+            <p className="demo-model-note">
+              Probabilité logistique de démonstration :{' '}
+              <strong>{(asset.demo_logistic_probability * 100).toFixed(1)} %</strong>. Étiquette
+              d’entraînement simulée :{' '}
+              <strong>
+                {asset.demo_logistic_training_label ? 'opportunité qualifiée' : 'non qualifiée'}
+              </strong>
+              . Ces résultats ne sont pas validés sur des prospections réelles.
+            </p>
+          )}
           <div className="owner-strip">
             <i>
               <Icon name="users" />
@@ -973,9 +1013,15 @@ function BrokerShell() {
   )
 }
 
-export default function BrokerApp({ assets, owners, summary, demo }: BrokerData) {
+export default function BrokerApp({
+  assets,
+  demoLogisticAssets,
+  owners,
+  summary,
+  demo,
+}: BrokerData) {
   return (
-    <BrokerDataContext.Provider value={{ assets, owners, summary, demo }}>
+    <BrokerDataContext.Provider value={{ assets, demoLogisticAssets, owners, summary, demo }}>
       <BrokerShell />
     </BrokerDataContext.Provider>
   )

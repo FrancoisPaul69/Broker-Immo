@@ -25,6 +25,8 @@ export interface Asset {
   owner_score: number
   sell_signal_score: number
   sourcing_score: number
+  demo_logistic_probability: number | null
+  demo_logistic_training_label: boolean | null
   score_breakdown: Breakdown[]
   score_explanation: string
   owner: string

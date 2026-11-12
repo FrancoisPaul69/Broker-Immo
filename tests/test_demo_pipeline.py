@@ -30,6 +30,8 @@ def test_pipeline_demo_bout_en_bout():
 
     scores = score_properties(properties)
     assert len(scores) == len(properties)
+    assert all(score.demo_logistic_probability is not None for score in scores.values())
+    assert all(score.demo_logistic_training_label is not None for score in scores.values())
 
     proprietes_commerciales = [p for p in properties if p.type_actif in (TypeActif.COMMERCIAL, TypeActif.INCERTAIN)]
     classement = sorted(proprietes_commerciales, key=lambda p: scores[p.numero_parcelle].sourcing_score, reverse=True)

@@ -712,7 +712,7 @@ main {
 }
 .filter-bar {
   display: grid;
-  grid-template-columns: 1fr 190px 170px 36px;
+  grid-template-columns: 1fr 190px 170px 190px 36px;
   gap: 10px;
   margin-bottom: 12px;
   padding: 12px;
@@ -790,6 +790,16 @@ main {
 .table-caption small {
   color: #a0aaa9;
   font-size: 7px;
+}
+.demo-model-note {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid #ead8b8;
+  border-radius: 8px;
+  color: #765b35;
+  background: #fbf5e9;
+  font-size: 8px;
+  line-height: 1.5;
 }
 .table-scroll {
   overflow-x: auto;

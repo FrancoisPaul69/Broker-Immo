@@ -14,6 +14,15 @@ def test_dataset_frontend_reutilise_le_domaine_sans_inventer_de_donnees():
     assert len(payload["assets"]) <= 100
     assert [a["rank"] for a in payload["assets"]] == list(range(1, len(payload["assets"]) + 1))
     assert [a["sourcing_score"] for a in payload["assets"]] == sorted([a["sourcing_score"] for a in payload["assets"]], reverse=True)
+    assert payload["demo_logistic_model"]["training_labels"] == "synthetiques"
+    assert len(payload["demo_logistic_assets"]) <= 100
+    assert [
+        asset["demo_logistic_probability"] for asset in payload["demo_logistic_assets"]
+    ] == sorted(
+        [asset["demo_logistic_probability"] for asset in payload["demo_logistic_assets"]],
+        reverse=True,
+    )
+    assert all(asset["demo_logistic_training_label"] is not None for asset in payload["assets"])
     first = payload["assets"][0]
     source = next(p for p in properties if p.numero_parcelle == first["numero_parcelle"])
     assert first["prix_derniere_mutation"] == source.prix_derniere_mutation

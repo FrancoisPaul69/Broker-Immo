@@ -64,6 +64,17 @@ def render() -> None:
         st.write(f"Actif : {score.asset_score:.1f} / 40")
         st.write(f"Propriétaire : {score.owner_score:.1f} / 30")
         st.write(f"Signaux : {score.sell_signal_score:.1f} / 30")
+        if property_.source == "demo" and pd.notna(row["probabilite_logistique_demo"]):
+            st.metric(
+                "Probabilité logistique DEMO",
+                f"{row['probabilite_logistique_demo']:.1%}",
+            )
+            st.caption(
+                "Modèle entraîné et évalué sur des étiquettes synthétiques ; "
+                "résultat illustratif, non validé sur des prospections réelles."
+            )
+            label = "qualifiée" if row["etiquette_synthetique_demo"] else "non qualifiée"
+            st.write(f"Étiquette d'entraînement simulée : opportunité {label}")
 
     st.subheader("Détail du score")
     breakdown_df = pd.DataFrame(

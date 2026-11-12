@@ -34,6 +34,8 @@ def build_ranked_rows(properties: list[Property], scores: dict[str, Score]) -> p
                 "owner_score": round(score.owner_score, 1),
                 "sell_signal_score": round(score.sell_signal_score, 1),
                 "sourcing_score": round(score.sourcing_score, 1),
+                "probabilite_logistique_demo": score.demo_logistic_probability,
+                "etiquette_synthetique_demo": score.demo_logistic_training_label,
                 "explanation": score.explanation,
             }
         )
@@ -53,6 +55,8 @@ def build_ranked_rows(properties: list[Property], scores: dict[str, Score]) -> p
                 "owner_score",
                 "sell_signal_score",
                 "sourcing_score",
+                "probabilite_logistique_demo",
+                "etiquette_synthetique_demo",
                 "explanation",
             ]
         )

@@ -35,8 +35,19 @@ def render() -> None:
         st.info("Aucun actif commercial ou incertain n'a été identifié dans la base.")
         return
 
+    model_available = ranked["probabilite_logistique_demo"].notna().any()
+    if model_available:
+        st.info(
+            "Modèle logistique de démonstration : les étiquettes « opportunité qualifiée » "
+            "sont simulées. Ces probabilités ne sont pas des prédictions métier validées."
+        )
+
     with st.sidebar:
         st.header("Filtres")
+        ranking_method = st.selectbox(
+            "Classement",
+            options=["Score sourcing", "Régression logistique DEMO"] if model_available else ["Score sourcing"],
+        )
         types = st.multiselect(
             "Type d'actif", options=sorted(ranked["type_actif"].unique()), default=list(ranked["type_actif"].unique())
         )
@@ -50,15 +61,30 @@ def render() -> None:
     filtered = ranked[ranked["type_actif"].isin(types) & ranked["confiance"].isin(confiances)]
     if villes:
         filtered = filtered[filtered["ville"].isin(villes)]
+    if ranking_method == "Régression logistique DEMO":
+        filtered = filtered.sort_values("probabilite_logistique_demo", ascending=False)
+    else:
+        filtered = filtered.sort_values("sourcing_score", ascending=False)
+    filtered = filtered.reset_index(drop=True)
+    filtered["rank"] = range(1, len(filtered) + 1)
 
     shortlist = filtered.head(100)
-    st.caption(f"{len(shortlist)} actif(s) affiché(s) sur {len(filtered)} correspondant(s) aux filtres.")
+    model_column = ["probabilite_logistique_demo"] if model_available else []
+    st.caption(
+        f"{len(shortlist)} actif(s) affiché(s) sur {len(filtered)} correspondant(s) aux filtres. "
+        f"Classement : {ranking_method}."
+    )
 
     if shortlist.empty:
         st.info("Aucun actif ne correspond aux filtres sélectionnés.")
         return
 
-    st.dataframe(shortlist[COLONNES_AFFICHEES], hide_index=True)
+    shortlist_display = shortlist[COLONNES_AFFICHEES + model_column].copy()
+    if model_available:
+        shortlist_display["probabilite_logistique_demo"] = shortlist_display[
+            "probabilite_logistique_demo"
+        ].map(lambda value: f"{value:.1%}" if value is not None else "—")
+    st.dataframe(shortlist_display, hide_index=True)
 
     selected = st.selectbox(
         "Sélectionner un actif",

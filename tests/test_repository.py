@@ -42,6 +42,8 @@ def test_load_properties_reconstruit_les_objets_lies():
     score = next(iter(scores.values()))
     assert score.breakdown, "le score reconstruit doit conserver le détail critère par critère"
     assert score.config_version
+    assert score.demo_logistic_probability is not None
+    assert score.demo_logistic_training_label is not None
 
 
 def test_load_properties_conserve_nature_batiment():

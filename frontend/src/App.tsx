@@ -1,7 +1,18 @@
 import { useEffect, useState } from 'react'
 import BrokerApp from '@/components/BrokerApp'
 import type { Asset, DashboardSummary, Owner } from '@/types/broker'
-interface DatasetResponse { demo: boolean; summary: DashboardSummary; assets: Asset[]; owners: Owner[] }
+interface DatasetResponse {
+  demo: boolean
+  summary: DashboardSummary
+  assets: Asset[]
+  demo_logistic_assets: Asset[]
+  demo_logistic_model: {
+    target: string
+    training_labels: string
+    cross_validation_folds: number
+  } | null
+  owners: Owner[]
+}
 export default function App() {
   const [dataset, setDataset] = useState<DatasetResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -14,5 +25,13 @@ export default function App() {
   }, [])
   if (error) return <main className="startup-state"><strong>Impossible de charger Broker Immo.</strong><span>{error}</span></main>
   if (!dataset) return <main className="startup-state"><strong>Chargement des opportunités…</strong></main>
-  return <BrokerApp assets={dataset.assets} owners={dataset.owners} summary={dataset.summary} demo={dataset.demo} />
+  return (
+    <BrokerApp
+      assets={dataset.assets}
+      demoLogisticAssets={dataset.demo_logistic_assets}
+      owners={dataset.owners}
+      summary={dataset.summary}
+      demo={dataset.demo}
+    />
+  )
 }

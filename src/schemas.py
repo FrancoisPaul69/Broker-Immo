@@ -247,3 +247,6 @@ class Score(DomainModel):
     explanation: str
     config_version: str
     calculated_at: datetime.datetime
+    demo_logistic_probability: float | None = None
+    demo_logistic_training_label: bool | None = None
+    demo_logistic_cv_folds: int | None = None

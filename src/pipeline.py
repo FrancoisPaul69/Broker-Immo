@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from src import asset_typing, data_cleaning, owner_resolution
 from src.adapters import parcelle_fiche_to_property
+from src.demo_logistic_regression import train_demo_logistic_regression
 from src.pappers_types import ParcelleFiche
 from src.portfolio import build_owner_portfolios
 from src.schemas import Property, Score
@@ -42,6 +43,21 @@ def build_properties(fiches: list[ParcelleFiche], source: str) -> list[Property]
 def score_properties(properties: list[Property]) -> dict[str, Score]:
     """Calcule le score de chaque actif. Les comparables (prix/m²) et les
     portefeuilles (taille identifiée en base) sont calculés sur l'ensemble
-    des actifs fournis."""
+    des actifs fournis. Le modèle logistique supplémentaire ne s'entraîne
+    que sur le jeu DEMO et ses résultats sont enregistrés avec le score."""
     portfolios = build_owner_portfolios(properties)
-    return {p.numero_parcelle: build_score(p, peers=properties, portfolios=portfolios) for p in properties}
+    scores = {
+        property_.numero_parcelle: build_score(property_, peers=properties, portfolios=portfolios)
+        for property_ in properties
+    }
+    demo_model = train_demo_logistic_regression(properties)
+    if demo_model:
+        for numero_parcelle, prediction in demo_model.predictions.items():
+            scores[numero_parcelle] = scores[numero_parcelle].model_copy(
+                update={
+                    "demo_logistic_probability": prediction.probability,
+                    "demo_logistic_training_label": prediction.synthetic_qualified_label,
+                    "demo_logistic_cv_folds": demo_model.cross_validation_folds,
+                }
+            )
+    return scores

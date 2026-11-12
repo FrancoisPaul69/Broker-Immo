@@ -85,6 +85,9 @@ def _score_domain(model: ScoreModel, numero_parcelle: str) -> Score:
         explanation=model.score_explanation or "",
         config_version=model.config_version,
         calculated_at=model.calculated_at,
+        demo_logistic_probability=model.demo_logistic_probability,
+        demo_logistic_training_label=model.demo_logistic_training_label,
+        demo_logistic_cv_folds=model.demo_logistic_cv_folds,
     )
 
 

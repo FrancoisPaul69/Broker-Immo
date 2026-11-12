@@ -318,6 +318,9 @@ def persister_property(session: Session, property_: Property, score: Score) -> P
             score_explanation=score.explanation,
             config_version=score.config_version,
             calculated_at=score.calculated_at,
+            demo_logistic_probability=score.demo_logistic_probability,
+            demo_logistic_training_label=score.demo_logistic_training_label,
+            demo_logistic_cv_folds=score.demo_logistic_cv_folds,
         )
     )
 

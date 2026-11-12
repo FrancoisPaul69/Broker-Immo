@@ -307,6 +307,24 @@ SELL_SIGNAL_PERMIS_RECENT_ANS = 2
 SELL_SIGNAL_GROS_PORTEFEUILLE_SEUIL = 10  # locaux/parcelles déclarés par l'API
 
 # ---------------------------------------------------------------------------
+# Régression logistique DEMO — cible et labels entièrement simulés.
+# Ces paramètres ne doivent jamais servir à entraîner un modèle Pappers.
+# ---------------------------------------------------------------------------
+DEMO_LOGISTIC_SEED = 2718
+DEMO_LOGISTIC_MAX_CV_SPLITS = 5
+DEMO_LOGISTIC_MAX_ITER = 500
+DEMO_LOGISTIC_LABEL_INTERCEPT = -1.2
+DEMO_LOGISTIC_LABEL_WEIGHTS = {
+    "commercial": 1.0,
+    "incertain": 0.2,
+    "surface_cible": 0.35,
+    "prix_cible": 0.45,
+    "proprietaire_identifie": 0.35,
+    "occupant_parti": 0.55,
+    "mutations_multiples": 0.15,
+}
+
+# ---------------------------------------------------------------------------
 # Explications — liste noire de vocabulaire (section 7, non négociable)
 # Un test (tests/test_explanations.py) échoue si un terme de cette liste
 # apparaît dans un texte généré par explanations.py.
